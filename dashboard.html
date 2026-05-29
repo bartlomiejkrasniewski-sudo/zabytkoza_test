@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zabytkoza – Dashboard</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div class="app-layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="dashboard.html" class="sidebar-logo">
+          <div class="logo-icon">🏛️</div>
+          <div class="sidebar-logo-text">
+            <span class="app-name">Zabytkoza</span>
+            <span class="app-sub">Panel administracyjny</span>
+          </div>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Nawigacja</div>
+
+        <a href="dashboard.html" class="nav-item" data-page="dashboard">
+          <span class="nav-icon">📊</span> Dashboard
+        </a>
+        <a href="monuments.html" class="nav-item" data-page="monuments">
+          <span class="nav-icon">🏰</span> Zabytki
+        </a>
+        <a href="#" class="nav-item" onclick="alert('Moduł Szlaków – wkrótce'); return false;">
+          <span class="nav-icon">🗺️</span> Szlaki
+        </a>
+        <a href="#" class="nav-item" onclick="alert('Encyklopedia – wkrótce'); return false;">
+          <span class="nav-icon">📚</span> Encyklopedia
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="nav-item btn-ghost" id="logout-side" style="width:100%">
+          <span class="nav-icon">🚪</span> Wyloguj się
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-content">
+      <header class="topbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="menu-toggle" id="menu-toggle" aria-label="Menu">☰</button>
+          <span class="topbar-title">Dashboard</span>
+        </div>
+        <div class="topbar-actions">
+          <div class="user-badge">
+            <div class="user-avatar" id="user-avatar">A</div>
+            <span class="user-email" id="user-email">ładowanie…</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="logout-btn">Wyloguj</button>
+        </div>
+      </header>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2>Przegląd</h2>
+            <p>Witaj w panelu administracyjnym Zabytkoza</p>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon gold">🏛️</div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-total">—</div>
+              <div class="stat-label">Wszystkich zabytków</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">✅</div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-published">—</div>
+              <div class="stat-label">Opublikowanych</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon blue">🗺️</div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-trails">—</div>
+              <div class="stat-label">Szlaków</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">📖</div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-hidden">—</div>
+              <div class="stat-label">Ukrytych</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent monuments table -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Ostatnio dodane zabytki</h3>
+            <a href="monuments.html" class="btn btn-secondary btn-sm">Zobacz wszystkie →</a>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nazwa</th>
+                  <th>Kategoria</th>
+                  <th>Status</th>
+                  <th>Data dodania</th>
+                </tr>
+              </thead>
+              <tbody id="recent-tbody">
+                <tr class="loading-row">
+                  <td colspan="4"><span class="spinner"></span>Ładowanie…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/monuments.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    (async () => {
+      await Auth.checkAuth();
+      UI.initSidebar('dashboard');
+      await UI.populateUserBadge();
+
+      try {
+        const monuments = await Monuments.loadMonuments();
+
+        document.getElementById('stat-total').textContent     = monuments.length;
+        document.getElementById('stat-published').textContent = monuments.filter(m => m.is_published).length;
+        document.getElementById('stat-hidden').textContent    = monuments.filter(m => !m.is_published).length;
+
+        // Trails count
+        const { count, error: trailErr } = await window.supabaseClient
+          .from('trails')
+          .select('id', { count: 'exact', head: true });
+        document.getElementById('stat-trails').textContent = trailErr ? '—' : (count ?? 0);
+
+        // Recent 5
+        const tbody = document.getElementById('recent-tbody');
+        const recent = monuments.slice(0, 5);
+
+        if (recent.length === 0) {
+          tbody.innerHTML = '<tr class="empty-row"><td colspan="4">Brak zabytków w bazie.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = recent.map(m => `
+          <tr>
+            <td>${escHtml(m.name || '—')}</td>
+            <td><span class="badge badge-category">${escHtml(m.category || '—')}</span></td>
+            <td>
+              ${m.is_published
+                ? '<span class="badge badge-published">● Opublikowany</span>'
+                : '<span class="badge badge-hidden">○ Ukryty</span>'}
+            </td>
+            <td>${UI.formatDate(m.created_at)}</td>
+          </tr>
+        `).join('');
+
+      } catch (err) {
+        UI.showToast(`Błąd pobierania danych: ${err.message}`, 'error');
+        document.getElementById('recent-tbody').innerHTML =
+          '<tr class="empty-row"><td colspan="4">Błąd ładowania danych.</td></tr>';
+      }
+    })();
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  </script>
+</body>
+</html>

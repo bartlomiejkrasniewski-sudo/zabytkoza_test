@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zabytkoza – Zarządzanie zabytkami</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div class="app-layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="dashboard.html" class="sidebar-logo">
+          <div class="logo-icon">🏛️</div>
+          <div class="sidebar-logo-text">
+            <span class="app-name">Zabytkoza</span>
+            <span class="app-sub">Panel administracyjny</span>
+          </div>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Nawigacja</div>
+
+        <a href="dashboard.html" class="nav-item" data-page="dashboard">
+          <span class="nav-icon">📊</span> Dashboard
+        </a>
+        <a href="monuments.html" class="nav-item" data-page="monuments">
+          <span class="nav-icon">🏰</span> Zabytki
+        </a>
+        <a href="#" class="nav-item" onclick="alert('Moduł Szlaków – wkrótce'); return false;">
+          <span class="nav-icon">🗺️</span> Szlaki
+        </a>
+        <a href="#" class="nav-item" onclick="alert('Encyklopedia – wkrótce'); return false;">
+          <span class="nav-icon">📚</span> Encyklopedia
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="nav-item btn-ghost" id="logout-side" style="width:100%">
+          <span class="nav-icon">🚪</span> Wyloguj się
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-content">
+      <header class="topbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="menu-toggle" id="menu-toggle" aria-label="Menu">☰</button>
+          <span class="topbar-title">Zabytki</span>
+        </div>
+        <div class="topbar-actions">
+          <div class="user-badge">
+            <div class="user-avatar" id="user-avatar">A</div>
+            <span class="user-email" id="user-email">ładowanie…</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="logout-btn">Wyloguj</button>
+        </div>
+      </header>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2>Zarządzanie zabytkami</h2>
+            <p id="count-label">Ładowanie listy…</p>
+          </div>
+          <button
+            class="btn btn-primary"
+            onclick="alert('Funkcja dodawania zabytku – wkrótce dostępna.')">
+            + Dodaj zabytek
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Lista zabytków</h3>
+            <div class="filters-bar">
+              <input
+                type="search"
+                class="search-input"
+                id="search-input"
+                placeholder="Szukaj po nazwie…"
+                aria-label="Szukaj"
+              />
+              <select class="filter-select" id="category-filter" aria-label="Filtruj po kategorii">
+                <option value="">Wszystkie kategorie</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nazwa</th>
+                  <th>Kategoria</th>
+                  <th>Opublikowany</th>
+                  <th>Data dodania</th>
+                  <th>Akcje</th>
+                </tr>
+              </thead>
+              <tbody id="monuments-tbody">
+                <tr class="loading-row">
+                  <td colspan="5"><span class="spinner"></span>Ładowanie zabytków…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/monuments.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    let searchQuery = '';
+    let selectedCategory = '';
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function renderTable() {
+      const filtered = Monuments.filterMonuments(searchQuery, selectedCategory);
+      const tbody = document.getElementById('monuments-tbody');
+      const countLabel = document.getElementById('count-label');
+      countLabel.textContent = `Wyświetlono ${filtered.length} rekordów`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Brak wyników dla podanych filtrów.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(m => `
+        <tr id="row-${m.id}">
+          <td>${escHtml(m.name || '—')}</td>
+          <td>
+            ${m.category
+              ? `<span class="badge badge-category">${escHtml(m.category)}</span>`
+              : '<span style="color:var(--text-muted)">—</span>'}
+          </td>
+          <td>
+            <label class="toggle" title="${m.is_published ? 'Kliknij aby ukryć' : 'Kliknij aby opublikować'}">
+              <input
+                type="checkbox"
+                ${m.is_published ? 'checked' : ''}
+                onchange="handleToggle('${m.id}', ${m.is_published})"
+              />
+              <span class="toggle-slider"></span>
+            </label>
+          </td>
+          <td>${UI.formatDate(m.created_at)}</td>
+          <td>
+            <div class="actions-cell">
+              <button
+                class="btn btn-secondary btn-sm"
+                onclick="alert('Edycja zabytku – wkrótce dostępna.')"
+                title="Edytuj">
+                ✏️ Edytuj
+              </button>
+              <button
+                class="btn btn-danger btn-sm"
+                onclick="handleDelete('${m.id}')"
+                title="Usuń">
+                🗑️ Usuń
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function handleDelete(id) {
+      try {
+        const deleted = await Monuments.deleteMonument(id);
+        if (deleted) {
+          const row = document.getElementById(`row-${id}`);
+          if (row) row.remove();
+          UI.showToast('Zabytek został usunięty.', 'success');
+          renderTable();
+        }
+      } catch (err) {
+        UI.showToast(`Błąd usuwania: ${err.message}`, 'error');
+      }
+    }
+
+    async function handleToggle(id, currentStatus) {
+      try {
+        const newStatus = await Monuments.togglePublish(id, currentStatus);
+        UI.showToast(
+          newStatus ? 'Zabytek opublikowany.' : 'Zabytek ukryty.',
+          'success'
+        );
+        renderTable();
+      } catch (err) {
+        UI.showToast(`Błąd zmiany statusu: ${err.message}`, 'error');
+        renderTable(); // przywróć poprawny stan checkboxa
+      }
+    }
+
+    function populateCategoryFilter() {
+      const select = document.getElementById('category-filter');
+      const cats = Monuments.getCategories();
+      cats.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        select.appendChild(opt);
+      });
+    }
+
+    (async () => {
+      await Auth.checkAuth();
+      UI.initSidebar('monuments');
+      await UI.populateUserBadge();
+
+      try {
+        await Monuments.loadMonuments();
+        populateCategoryFilter();
+        renderTable();
+      } catch (err) {
+        UI.showToast(`Błąd pobierania zabytków: ${err.message}`, 'error');
+        document.getElementById('monuments-tbody').innerHTML =
+          '<tr class="empty-row"><td colspan="5">Błąd ładowania danych z bazy.</td></tr>';
+        document.getElementById('count-label').textContent = 'Błąd ładowania';
+      }
+
+      document.getElementById('search-input').addEventListener('input', e => {
+        searchQuery = e.target.value;
+        renderTable();
+      });
+
+      document.getElementById('category-filter').addEventListener('change', e => {
+        selectedCategory = e.target.value;
+        renderTable();
+      });
+    })();
+  </script>
+</body>
+</html>

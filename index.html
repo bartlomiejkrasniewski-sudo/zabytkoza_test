@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zabytkoza – Logowanie</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="login-page">
+
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-icon">🏛️</div>
+      <h1>Zabytkoza Admin Panel</h1>
+      <p>Towarzystwo Opieki nad Zabytkami – Olsztyn</p>
+    </div>
+
+    <form id="login-form" novalidate>
+      <div class="form-group">
+        <label for="email">Adres e-mail</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="admin@przyklad.pl"
+          autocomplete="email"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Hasło</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="••••••••"
+          autocomplete="current-password"
+          required
+        />
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full" id="login-btn">
+        Zaloguj się
+      </button>
+
+      <div class="error-msg" id="error-msg"></div>
+    </form>
+  </div>
+
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    (async () => {
+      // Jeśli użytkownik już zalogowany – od razu przekieruj
+      const { data: { session } } = await window.supabaseClient.auth.getSession();
+      if (session) window.location.href = 'dashboard.html';
+    })();
+
+    const form    = document.getElementById('login-form');
+    const btn     = document.getElementById('login-btn');
+    const errorEl = document.getElementById('error-msg');
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      errorEl.classList.remove('visible');
+      btn.disabled = true;
+      btn.textContent = 'Logowanie…';
+
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        await Auth.loginWithEmail(email, password);
+        window.location.href = 'dashboard.html';
+      } catch (err) {
+        const messages = {
+          'Invalid login credentials': 'Nieprawidłowy e-mail lub hasło.',
+          'Email not confirmed':        'Konto nie zostało potwierdzone.',
+          'Too many requests':          'Zbyt wiele prób. Poczekaj chwilę.',
+        };
+        errorEl.textContent = messages[err.message] || `Błąd: ${err.message}`;
+        errorEl.classList.add('visible');
+        btn.disabled = false;
+        btn.textContent = 'Zaloguj się';
+      }
+    });
+  </script>
+</body>
+</html>
