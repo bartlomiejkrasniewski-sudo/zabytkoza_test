@@ -4,7 +4,7 @@ const Monuments = (() => {
   async function loadMonuments() {
     const { data, error } = await window.supabaseClient
       .from('monuments')
-      .select('id, name, category, is_published, created_at')
+      .select('id, name, category_id, is_published, created_at')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -45,7 +45,7 @@ const Monuments = (() => {
     let result = [...allMonuments];
 
     if (category && category !== '') {
-      result = result.filter(m => m.category === category);
+      result = result.filter(m => m.category_id === category);
     }
 
     if (query && query.trim() !== '') {
@@ -58,7 +58,7 @@ const Monuments = (() => {
 
   function getCategories() {
     const cats = allMonuments
-      .map(m => m.category)
+      .map(m => m.category_id)
       .filter(Boolean);
     return [...new Set(cats)].sort();
   }

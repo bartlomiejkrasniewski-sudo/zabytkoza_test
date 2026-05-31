@@ -168,7 +168,7 @@
         tbody.innerHTML = recent.map(m => `
           <tr>
             <td>${escHtml(m.name || '—')}</td>
-            <td><span class="badge badge-category">${escHtml(m.category || '—')}</span></td>
+            <td><span class="badge badge-category">—</span></td>
             <td>
               ${m.is_published
                 ? '<span class="badge badge-published">● Opublikowany</span>'
