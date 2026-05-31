@@ -1,9 +1,12 @@
 const AddMonument = (() => {
-  let editId = null;
+  let editId      = null;
+  let selectedFile = null;
 
   function getUrlId() {
     return new URLSearchParams(window.location.search).get('id');
   }
+
+  // ─── Categories ──────────────────────────────────────
 
   async function loadCategories() {
     const { data, error } = await window.supabaseClient
@@ -21,6 +24,8 @@ const AddMonument = (() => {
       select.appendChild(opt);
     });
   }
+
+  // ─── Load existing monument ───────────────────────────
 
   async function loadMonument(id) {
     const { data, error } = await window.supabaseClient
@@ -42,16 +47,59 @@ const AddMonument = (() => {
     document.getElementById('longitude').value         = data.longitude ?? '';
     document.getElementById('is-published').checked    = !!data.is_published;
 
+    if (data.cover_image_url) {
+      showPreviewUrl(data.cover_image_url);
+    }
+
     updateCharCounter();
   }
 
-  function updateCharCounter() {
-    const ta      = document.getElementById('short-description');
-    const counter = document.getElementById('short-desc-counter');
-    const len     = ta.value.length;
-    counter.textContent = `${len}/200`;
-    counter.classList.toggle('warn', len > 180);
+  // ─── Image preview ────────────────────────────────────
+
+  function previewImage(file) {
+    const reader = new FileReader();
+    reader.onload = e => showPreviewUrl(e.target.result);
+    reader.readAsDataURL(file);
   }
+
+  function showPreviewUrl(url) {
+    const img         = document.getElementById('cover-preview');
+    const placeholder = document.getElementById('upload-placeholder');
+    img.src           = url;
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+  }
+
+  // ─── Image upload ─────────────────────────────────────
+
+  async function uploadImage(file, monumentId) {
+    if (!file.type.startsWith('image/')) {
+      UI.showToast('Dozwolone są tylko pliki graficzne (JPG, PNG, WebP…).', 'error');
+      return null;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      UI.showToast('Plik jest za duży. Maksymalny rozmiar to 5 MB.', 'error');
+      return null;
+    }
+
+    const ext      = file.name.split('.').pop().toLowerCase();
+    const path     = `${monumentId}/${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await window.supabaseClient.storage
+      .from('monument-images')
+      .upload(path, file, { upsert: true });
+
+    if (uploadError) throw new Error(`Upload zdjęcia nieudany: ${uploadError.message}`);
+
+    const { data } = window.supabaseClient.storage
+      .from('monument-images')
+      .getPublicUrl(path);
+
+    return data.publicUrl;
+  }
+
+  // ─── Validation ───────────────────────────────────────
 
   function validate() {
     const name        = document.getElementById('name').value.trim();
@@ -69,6 +117,8 @@ const AddMonument = (() => {
     }
     return true;
   }
+
+  // ─── Save ─────────────────────────────────────────────
 
   async function saveMonument() {
     if (!validate()) return;
@@ -91,28 +141,58 @@ const AddMonument = (() => {
     btn.textContent = 'Zapisywanie…';
 
     try {
+      let monumentId = editId;
+
       if (editId) {
         const { error } = await window.supabaseClient
           .from('monuments')
           .update(payload)
           .eq('id', editId);
         if (error) throw error;
-        UI.showToast('Zmiany zostały zapisane!', 'success');
       } else {
-        const { error } = await window.supabaseClient
+        const { data, error } = await window.supabaseClient
           .from('monuments')
-          .insert(payload);
+          .insert(payload)
+          .select('id')
+          .single();
         if (error) throw error;
-        UI.showToast('Zabytek dodany!', 'success');
+        monumentId = data.id;
       }
 
+      if (selectedFile) {
+        btn.textContent = 'Przesyłanie zdjęcia…';
+        const publicUrl = await uploadImage(selectedFile, monumentId);
+
+        if (publicUrl) {
+          const { error: urlError } = await window.supabaseClient
+            .from('monuments')
+            .update({ cover_image_url: publicUrl })
+            .eq('id', monumentId);
+          if (urlError) throw urlError;
+        }
+      }
+
+      UI.showToast(editId ? 'Zmiany zostały zapisane!' : 'Zabytek dodany!', 'success');
       setTimeout(() => { window.location.href = 'monuments.html'; }, 1200);
+
     } catch (err) {
       UI.showToast(`Błąd zapisu: ${err.message}`, 'error');
       btn.disabled    = false;
       btn.textContent = editId ? 'Zapisz zmiany' : 'Zapisz zabytek';
     }
   }
+
+  // ─── Char counter ─────────────────────────────────────
+
+  function updateCharCounter() {
+    const ta      = document.getElementById('short-description');
+    const counter = document.getElementById('short-desc-counter');
+    const len     = ta.value.length;
+    counter.textContent = `${len}/200`;
+    counter.classList.toggle('warn', len > 180);
+  }
+
+  // ─── Init ─────────────────────────────────────────────
 
   async function init() {
     await Auth.checkAuth();
@@ -125,9 +205,9 @@ const AddMonument = (() => {
       await loadCategories();
 
       if (editId) {
-        document.getElementById('page-title').textContent  = 'Edycja zabytku';
+        document.getElementById('page-title').textContent   = 'Edycja zabytku';
         document.getElementById('topbar-title').textContent = 'Edycja zabytku';
-        document.getElementById('save-btn').textContent    = 'Zapisz zmiany';
+        document.getElementById('save-btn').textContent     = 'Zapisz zmiany';
         await loadMonument(editId);
       }
     } catch (err) {
@@ -142,6 +222,34 @@ const AddMonument = (() => {
 
     document.getElementById('cancel-btn')
       .addEventListener('click', () => { window.location.href = 'monuments.html'; });
+
+    const fileInput = document.getElementById('cover-image');
+
+    document.getElementById('choose-image-btn')
+      .addEventListener('click', () => fileInput.click());
+
+    document.getElementById('upload-placeholder')
+      .addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        UI.showToast('Dozwolone są tylko pliki graficzne.', 'error');
+        fileInput.value = '';
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        UI.showToast('Plik jest za duży. Maksymalny rozmiar to 5 MB.', 'error');
+        fileInput.value = '';
+        return;
+      }
+
+      selectedFile = file;
+      document.getElementById('image-filename').textContent = file.name;
+      previewImage(file);
+    });
   }
 
   return { init };

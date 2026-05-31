@@ -880,3 +880,28 @@ tbody td {
 @media (max-width: 600px) {
   .form-grid { grid-template-columns: 1fr; }
 }
+
+/* ─── Image upload area ──────────────────────────────── */
+.image-upload-area {
+  background: var(--bg-surface);
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: border-color var(--transition);
+}
+
+.image-upload-area:hover {
+  border-color: var(--accent);
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 16px 0 8px;
+  cursor: pointer;
+  user-select: none;
+}
