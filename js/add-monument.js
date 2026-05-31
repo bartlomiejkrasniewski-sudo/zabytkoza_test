@@ -225,12 +225,6 @@ const AddMonument = (() => {
 
     const fileInput = document.getElementById('cover-image');
 
-    document.getElementById('choose-image-btn')
-      .addEventListener('click', () => fileInput.click());
-
-    document.getElementById('upload-placeholder')
-      .addEventListener('click', () => fileInput.click());
-
     fileInput.addEventListener('change', e => {
       const file = e.target.files[0];
       if (!file) return;

@@ -155,16 +155,16 @@
                     style="display:none; max-width:100%; max-height:300px;
                            border-radius:var(--radius); margin-bottom:12px;
                            object-fit:cover;" />
-                  <input type="file" id="cover-image" accept="image/*"
-                    style="display:none" />
-                  <div id="upload-placeholder" class="upload-placeholder">
+                  <label for="cover-image" class="upload-placeholder" id="upload-placeholder">
                     <span style="font-size:28px">🖼️</span>
                     <span>Kliknij aby wybrać zdjęcie</span>
-                  </div>
-                  <button type="button" class="btn btn-secondary btn-sm"
-                    id="choose-image-btn" style="margin-top:8px">
+                  </label>
+                  <input type="file" id="cover-image" accept="image/*"
+                    class="file-input-hidden" />
+                  <label for="cover-image" class="btn btn-secondary btn-sm"
+                    style="margin-top:8px; cursor:pointer">
                     Wybierz plik
-                  </button>
+                  </label>
                   <span id="image-filename"
                     style="font-size:12px; color:var(--text-muted); margin-left:10px"></span>
                 </div>

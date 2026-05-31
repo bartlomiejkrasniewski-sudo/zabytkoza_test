@@ -905,3 +905,12 @@ tbody td {
   cursor: pointer;
   user-select: none;
 }
+
+.file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  z-index: -1;
+}
