@@ -41,7 +41,7 @@ const AddMonument = (() => {
     document.getElementById('description').value       = data.description       || '';
     document.getElementById('address').value           = data.address           || '';
     document.getElementById('city').value              = data.city              || '';
-    document.getElementById('build-year').value        = data.build_year        || '';
+    document.getElementById('build-year').value        = data.year_built        || '';
     document.getElementById('category-id').value       = data.category_id       || '';
     document.getElementById('latitude').value          = data.latitude  ?? '';
     document.getElementById('longitude').value         = data.longitude ?? '';
@@ -129,7 +129,7 @@ const AddMonument = (() => {
       description:       document.getElementById('description').value.trim(),
       address:           document.getElementById('address').value.trim()    || null,
       city:              document.getElementById('city').value.trim()       || null,
-      build_year:        document.getElementById('build-year').value.trim() || null,
+      year_built:        document.getElementById('build-year').value.trim() || null,
       category_id:       document.getElementById('category-id').value       || null,
       latitude:          parseFloat(document.getElementById('latitude').value)  || null,
       longitude:         parseFloat(document.getElementById('longitude').value) || null,
