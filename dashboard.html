@@ -31,7 +31,7 @@
         <a href="monuments.html" class="nav-item" data-page="monuments">
           <span class="nav-icon">🏰</span> Zabytki
         </a>
-        <a href="#" class="nav-item" onclick="alert('Moduł Szlaków – wkrótce'); return false;">
+        <a href="tours.html" class="nav-item" data-page="tours">
           <span class="nav-icon">🗺️</span> Szlaki
         </a>
         <a href="#" class="nav-item" onclick="alert('Encyklopedia – wkrótce'); return false;">
@@ -152,7 +152,7 @@
 
         // Trails count
         const { count, error: trailErr } = await window.supabaseClient
-          .from('trails')
+          .from('tours')
           .select('id', { count: 'exact', head: true });
         document.getElementById('stat-trails').textContent = trailErr ? '—' : (count ?? 0);
 

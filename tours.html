@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Zabytkoza – Zarządzanie zabytkami</title>
+  <title>Zabytkoza – Szlaki turystyczne</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -51,7 +51,7 @@
       <header class="topbar">
         <div style="display:flex;align-items:center;gap:12px">
           <button class="menu-toggle" id="menu-toggle" aria-label="Menu">☰</button>
-          <span class="topbar-title">Zabytki</span>
+          <span class="topbar-title">Szlaki</span>
         </div>
         <div class="topbar-actions">
           <div class="user-badge">
@@ -65,15 +65,15 @@
       <main class="page-content">
         <div class="page-header">
           <div>
-            <h2>Zarządzanie zabytkami</h2>
+            <h2>Szlaki turystyczne</h2>
             <p id="count-label">Ładowanie listy…</p>
           </div>
-          <a href="add-monument.html" class="btn btn-primary">+ Dodaj zabytek</a>
+          <a href="add-tour.html" class="btn btn-primary">+ Dodaj szlak</a>
         </div>
 
         <div class="card">
           <div class="card-header">
-            <h3>Lista zabytków</h3>
+            <h3>Lista szlaków</h3>
             <div class="filters-bar">
               <input
                 type="search"
@@ -82,9 +82,6 @@
                 placeholder="Szukaj po nazwie…"
                 aria-label="Szukaj"
               />
-              <select class="filter-select" id="category-filter" aria-label="Filtruj po kategorii">
-                <option value="">Wszystkie kategorie</option>
-              </select>
             </div>
           </div>
 
@@ -93,15 +90,16 @@
               <thead>
                 <tr>
                   <th>Nazwa</th>
-                  <th>Kategoria</th>
+                  <th>Trudność</th>
+                  <th>Czas</th>
+                  <th>Dystans</th>
                   <th>Opublikowany</th>
-                  <th>Data dodania</th>
                   <th>Akcje</th>
                 </tr>
               </thead>
-              <tbody id="monuments-tbody">
+              <tbody id="tours-tbody">
                 <tr class="loading-row">
-                  <td colspan="5"><span class="spinner"></span>Ładowanie zabytków…</td>
+                  <td colspan="6"><span class="spinner"></span>Ładowanie szlaków…</td>
                 </tr>
               </tbody>
             </table>
@@ -116,11 +114,10 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="js/supabase-client.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/monuments.js"></script>
+  <script src="js/tours.js"></script>
   <script src="js/ui.js"></script>
   <script>
     let searchQuery = '';
-    let selectedCategory = '';
 
     function escHtml(str) {
       return String(str)
@@ -129,63 +126,64 @@
     }
 
     function renderTable() {
-      const filtered = Monuments.filterMonuments(searchQuery, selectedCategory);
-      const tbody = document.getElementById('monuments-tbody');
+      const filtered  = Tours.filterTours(searchQuery);
+      const tbody     = document.getElementById('tours-tbody');
       const countLabel = document.getElementById('count-label');
       countLabel.textContent = `Wyświetlono ${filtered.length} rekordów`;
 
       if (filtered.length === 0) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Brak wyników dla podanych filtrów.</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Brak szlaków w bazie.</td></tr>';
         return;
       }
 
-      tbody.innerHTML = filtered.map(m => `
-        <tr id="row-${m.id}">
-          <td>${escHtml(m.name || '—')}</td>
-          <td>
-            ${m.categories?.name
-              ? `<span class="badge badge-category">${escHtml(m.categories.name)}</span>`
-              : '<span style="color:var(--text-muted)">—</span>'}
-          </td>
-          <td>
-            <label class="toggle" title="${m.is_published ? 'Kliknij aby ukryć' : 'Kliknij aby opublikować'}">
-              <input
-                type="checkbox"
-                ${m.is_published ? 'checked' : ''}
-                onchange="handleToggle('${m.id}', ${m.is_published})"
-              />
-              <span class="toggle-slider"></span>
-            </label>
-          </td>
-          <td>${UI.formatDate(m.created_at)}</td>
-          <td>
-            <div class="actions-cell">
-              <a
-                href="add-monument.html?id=${m.id}"
-                class="btn btn-secondary btn-sm"
-                title="Edytuj">
-                ✏️ Edytuj
-              </a>
-              <button
-                class="btn btn-danger btn-sm"
-                onclick="handleDelete('${m.id}')"
-                title="Usuń">
-                🗑️ Usuń
-              </button>
-            </div>
-          </td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = filtered.map(t => {
+        const diff = Tours.difficultyBadge(t.difficulty);
+        return `
+          <tr id="row-${t.id}">
+            <td>${escHtml(t.name || '—')}</td>
+            <td>
+              ${diff.cls
+                ? `<span class="badge ${diff.cls}">${escHtml(diff.label)}</span>`
+                : `<span style="color:var(--text-muted)">—</span>`}
+            </td>
+            <td>${escHtml(Tours.formatDuration(t.duration_minutes))}</td>
+            <td>${escHtml(Tours.formatDistance(t.distance_meters))}</td>
+            <td>
+              <label class="toggle" title="${t.is_published ? 'Kliknij aby ukryć' : 'Kliknij aby opublikować'}">
+                <input
+                  type="checkbox"
+                  ${t.is_published ? 'checked' : ''}
+                  onchange="handleToggle('${t.id}', ${t.is_published})"
+                />
+                <span class="toggle-slider"></span>
+              </label>
+            </td>
+            <td>
+              <div class="actions-cell">
+                <a href="add-tour.html?id=${t.id}" class="btn btn-secondary btn-sm" title="Edytuj">
+                  ✏️ Edytuj
+                </a>
+                <a href="tour-stops.html?id=${t.id}" class="btn btn-secondary btn-sm" title="Punkty szlaku">
+                  📍 Punkty
+                </a>
+                <button
+                  class="btn btn-danger btn-sm"
+                  onclick="handleDelete('${t.id}')"
+                  title="Usuń">
+                  🗑️ Usuń
+                </button>
+              </div>
+            </td>
+          </tr>`;
+      }).join('');
     }
 
     async function handleDelete(id) {
       try {
-        const deleted = await Monuments.deleteMonument(id);
+        const deleted = await Tours.deleteTour(id);
         if (deleted) {
-          const row = document.getElementById(`row-${id}`);
-          if (row) row.remove();
-          UI.showToast('Zabytek został usunięty.', 'success');
           renderTable();
+          UI.showToast('Szlak został usunięty.', 'success');
         }
       } catch (err) {
         UI.showToast(`Błąd usuwania: ${err.message}`, 'error');
@@ -194,52 +192,32 @@
 
     async function handleToggle(id, currentStatus) {
       try {
-        const newStatus = await Monuments.togglePublish(id, currentStatus);
-        UI.showToast(
-          newStatus ? 'Zabytek opublikowany.' : 'Zabytek ukryty.',
-          'success'
-        );
+        const newStatus = await Tours.togglePublish(id, currentStatus);
+        UI.showToast(newStatus ? 'Szlak opublikowany.' : 'Szlak ukryty.', 'success');
         renderTable();
       } catch (err) {
         UI.showToast(`Błąd zmiany statusu: ${err.message}`, 'error');
-        renderTable(); // przywróć poprawny stan checkboxa
+        renderTable();
       }
-    }
-
-    function populateCategoryFilter() {
-      const select = document.getElementById('category-filter');
-      const cats = Monuments.getCategories();
-      cats.forEach(cat => {
-        const opt = document.createElement('option');
-        opt.value = cat;
-        opt.textContent = cat;
-        select.appendChild(opt);
-      });
     }
 
     (async () => {
       await Auth.checkAuth();
-      UI.initSidebar('monuments');
+      UI.initSidebar('tours');
       await UI.populateUserBadge();
 
       try {
-        await Monuments.loadMonuments();
-        populateCategoryFilter();
+        await Tours.loadTours();
         renderTable();
       } catch (err) {
-        UI.showToast(`Błąd pobierania zabytków: ${err.message}`, 'error');
-        document.getElementById('monuments-tbody').innerHTML =
-          '<tr class="empty-row"><td colspan="5">Błąd ładowania danych z bazy.</td></tr>';
+        UI.showToast(`Błąd pobierania szlaków: ${err.message}`, 'error');
+        document.getElementById('tours-tbody').innerHTML =
+          '<tr class="empty-row"><td colspan="6">Błąd ładowania danych z bazy.</td></tr>';
         document.getElementById('count-label').textContent = 'Błąd ładowania';
       }
 
       document.getElementById('search-input').addEventListener('input', e => {
         searchQuery = e.target.value;
-        renderTable();
-      });
-
-      document.getElementById('category-filter').addEventListener('change', e => {
-        selectedCategory = e.target.value;
         renderTable();
       });
     })();

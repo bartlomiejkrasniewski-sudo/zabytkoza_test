@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zabytkoza – Punkty szlaku</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div class="app-layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="dashboard.html" class="sidebar-logo">
+          <div class="logo-icon">🏛️</div>
+          <div class="sidebar-logo-text">
+            <span class="app-name">Zabytkoza</span>
+            <span class="app-sub">Panel administracyjny</span>
+          </div>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Nawigacja</div>
+
+        <a href="dashboard.html" class="nav-item" data-page="dashboard">
+          <span class="nav-icon">📊</span> Dashboard
+        </a>
+        <a href="monuments.html" class="nav-item" data-page="monuments">
+          <span class="nav-icon">🏰</span> Zabytki
+        </a>
+        <a href="tours.html" class="nav-item" data-page="tours">
+          <span class="nav-icon">🗺️</span> Szlaki
+        </a>
+        <a href="#" class="nav-item" onclick="alert('Encyklopedia – wkrótce'); return false;">
+          <span class="nav-icon">📚</span> Encyklopedia
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="nav-item btn-ghost" id="logout-side" style="width:100%">
+          <span class="nav-icon">🚪</span> Wyloguj się
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-content">
+      <header class="topbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="menu-toggle" id="menu-toggle" aria-label="Menu">☰</button>
+          <span class="topbar-title">Punkty szlaku</span>
+        </div>
+        <div class="topbar-actions">
+          <div class="user-badge">
+            <div class="user-avatar" id="user-avatar">A</div>
+            <span class="user-email" id="user-email">ładowanie…</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="logout-btn">Wyloguj</button>
+        </div>
+      </header>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 id="tour-name">Ładowanie…</h2>
+            <p>Zarządzanie punktami szlaku</p>
+          </div>
+          <a id="back-btn" href="tours.html" class="btn btn-secondary">← Wróć do szlaków</a>
+        </div>
+
+        <!-- Stops table -->
+        <div class="card" style="margin-bottom:24px">
+          <div class="card-header">
+            <h3>Punkty szlaku</h3>
+            <span id="stops-count" style="font-size:12px;color:var(--text-muted)"></span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:70px">Kolejność</th>
+                  <th>Nazwa zabytku</th>
+                  <th>Opis punktu</th>
+                  <th>Akcje</th>
+                </tr>
+              </thead>
+              <tbody id="stops-tbody">
+                <tr class="loading-row">
+                  <td colspan="4"><span class="spinner"></span>Ładowanie punktów…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Add stop form -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Dodaj punkt do szlaku</h3>
+          </div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="monument-select">Zabytek</label>
+                <select id="monument-select">
+                  <option value="">— wybierz zabytek —</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="stop-description">Opis punktu (opcjonalny)</label>
+                <input type="text" id="stop-description"
+                  placeholder="np. Punkt startowy szlaku" />
+              </div>
+            </div>
+            <div class="form-actions" style="border-top:none; padding-top:4px">
+              <button class="btn btn-primary" id="add-stop-btn" type="button">
+                + Dodaj do szlaku
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/tour-stops.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function renderStops() {
+      const stops = TourStops.getAllStops();
+      const tbody = document.getElementById('stops-tbody');
+      document.getElementById('stops-count').textContent =
+        stops.length ? `${stops.length} punktów` : '';
+
+      if (stops.length === 0) {
+        tbody.innerHTML =
+          '<tr class="empty-row"><td colspan="4">Brak punktów. Dodaj pierwszy punkt poniżej.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = stops.map((s, idx) => `
+        <tr id="stop-row-${s.id}">
+          <td style="text-align:center;font-weight:600;color:var(--accent-light)">
+            ${s.stop_order}
+          </td>
+          <td>${escHtml(s.monuments?.name || '—')}</td>
+          <td style="color:var(--text-secondary)">${escHtml(s.description || '—')}</td>
+          <td>
+            <div class="actions-cell">
+              <button class="btn btn-secondary btn-sm" title="Przesuń w górę"
+                onclick="handleMove('${s.id}', 'up')"
+                ${idx === 0 ? 'disabled' : ''}>↑</button>
+              <button class="btn btn-secondary btn-sm" title="Przesuń w dół"
+                onclick="handleMove('${s.id}', 'down')"
+                ${idx === stops.length - 1 ? 'disabled' : ''}>↓</button>
+              <button class="btn btn-danger btn-sm" title="Usuń"
+                onclick="handleDeleteStop('${s.id}')">🗑️ Usuń</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function handleMove(id, direction) {
+      try {
+        await TourStops.moveStop(id, direction);
+        const tourId = TourStops.getUrlId();
+        await TourStops.loadStops(tourId);
+        renderStops();
+      } catch (err) {
+        UI.showToast(`Błąd zmiany kolejności: ${err.message}`, 'error');
+      }
+    }
+
+    async function handleDeleteStop(id) {
+      try {
+        const deleted = await TourStops.deleteStop(id);
+        if (deleted) {
+          const tourId = TourStops.getUrlId();
+          await TourStops.loadStops(tourId);
+          renderStops();
+          UI.showToast('Punkt usunięty.', 'success');
+        }
+      } catch (err) {
+        UI.showToast(`Błąd usuwania: ${err.message}`, 'error');
+      }
+    }
+
+    (async () => {
+      await Auth.checkAuth();
+      UI.initSidebar('tours');
+      await UI.populateUserBadge();
+
+      const tourId = TourStops.getUrlId();
+      if (!tourId) {
+        UI.showToast('Brak identyfikatora szlaku w URL.', 'error');
+        return;
+      }
+
+      TourStops.setTourId(tourId);
+
+      try {
+        const [name] = await Promise.all([
+          TourStops.loadTourName(tourId),
+          TourStops.loadStops(tourId),
+          TourStops.loadMonuments(),
+        ]);
+
+        document.getElementById('tour-name').textContent = name;
+        document.title = `Zabytkoza – ${name}`;
+        renderStops();
+      } catch (err) {
+        UI.showToast(`Błąd ładowania danych: ${err.message}`, 'error');
+        document.getElementById('stops-tbody').innerHTML =
+          '<tr class="empty-row"><td colspan="4">Błąd ładowania danych.</td></tr>';
+      }
+
+      document.getElementById('add-stop-btn').addEventListener('click', async () => {
+        const monumentId  = document.getElementById('monument-select').value;
+        const description = document.getElementById('stop-description').value.trim();
+
+        if (!monumentId) {
+          UI.showToast('Wybierz zabytek z listy.', 'error');
+          return;
+        }
+
+        const btn = document.getElementById('add-stop-btn');
+        btn.disabled    = true;
+        btn.textContent = 'Dodawanie…';
+
+        try {
+          await TourStops.addStop(monumentId, description);
+          await TourStops.loadStops(tourId);
+          renderStops();
+
+          document.getElementById('monument-select').value  = '';
+          document.getElementById('stop-description').value = '';
+          UI.showToast('Punkt dodany do szlaku.', 'success');
+        } catch (err) {
+          UI.showToast(`Błąd dodawania punktu: ${err.message}`, 'error');
+        } finally {
+          btn.disabled    = false;
+          btn.textContent = '+ Dodaj do szlaku';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

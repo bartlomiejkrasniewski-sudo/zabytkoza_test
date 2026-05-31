@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Zabytkoza – Dodaj zabytek</title>
+  <title>Zabytkoza – Dodaj szlak</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -51,7 +51,7 @@
       <header class="topbar">
         <div style="display:flex;align-items:center;gap:12px">
           <button class="menu-toggle" id="menu-toggle" aria-label="Menu">☰</button>
-          <span class="topbar-title" id="topbar-title">Dodaj zabytek</span>
+          <span class="topbar-title" id="topbar-title">Dodaj szlak</span>
         </div>
         <div class="topbar-actions">
           <div class="user-badge">
@@ -65,23 +65,23 @@
       <main class="page-content">
         <div class="page-header">
           <div>
-            <h2 id="page-title">Dodaj zabytek</h2>
-            <p>Wypełnij poniższe pola i zapisz rekord do bazy danych.</p>
+            <h2 id="page-title">Dodaj szlak</h2>
+            <p>Wypełnij poniższe pola i zapisz szlak do bazy danych.</p>
           </div>
-          <a href="monuments.html" class="btn btn-secondary">← Wróć do listy</a>
+          <a href="tours.html" class="btn btn-secondary">← Wróć do listy</a>
         </div>
 
         <div class="card">
           <div class="card-header">
-            <h3>Dane zabytku</h3>
+            <h3>Dane szlaku</h3>
           </div>
           <div class="card-body">
-            <form id="monument-form" onsubmit="return false;">
+            <form id="tour-form" onsubmit="return false;">
 
               <!-- Nazwa -->
               <div class="form-group">
                 <label for="name">Nazwa <span style="color:var(--danger-light)">*</span></label>
-                <input type="text" id="name" placeholder="np. Zamek w Lidzbarku Warmińskim" />
+                <input type="text" id="name" placeholder="np. Szlak Zamków Warmii" />
               </div>
 
               <!-- Krótki opis -->
@@ -91,54 +91,40 @@
                   <span class="char-counter" id="short-desc-counter">0/200</span>
                 </label>
                 <textarea id="short-description" maxlength="200" rows="3"
-                  placeholder="Krótkie streszczenie widoczne na liście zabytków…"></textarea>
+                  placeholder="Krótkie streszczenie szlaku…"></textarea>
               </div>
 
               <!-- Pełny opis -->
               <div class="form-group">
-                <label for="description">Pełny opis <span style="color:var(--danger-light)">*</span></label>
+                <label for="description">Pełny opis</label>
                 <textarea id="description" rows="6"
-                  placeholder="Szczegółowy opis zabytku, historia, ciekawostki…"></textarea>
+                  placeholder="Szczegółowy opis szlaku, atrakcje, wskazówki…"></textarea>
               </div>
 
-              <!-- Adres + Miasto -->
+              <!-- Trudność + Czas -->
               <div class="form-grid">
                 <div class="form-group">
-                  <label for="address">Adres</label>
-                  <input type="text" id="address" placeholder="np. ul. Zamkowa 1" />
-                </div>
-                <div class="form-group">
-                  <label for="city">Miasto</label>
-                  <input type="text" id="city" value="Olsztyn" placeholder="np. Olsztyn" />
-                </div>
-              </div>
-
-              <!-- Rok budowy + Kategoria -->
-              <div class="form-grid">
-                <div class="form-group">
-                  <label for="build-year">Rok budowy</label>
-                  <input type="text" id="build-year" placeholder="np. 1350" />
-                </div>
-                <div class="form-group">
-                  <label for="category-id">Kategoria</label>
-                  <select id="category-id">
-                    <option value="">— brak kategorii —</option>
+                  <label for="difficulty">Trudność</label>
+                  <select id="difficulty">
+                    <option value="">— brak —</option>
+                    <option value="easy">Łatwy</option>
+                    <option value="medium">Średni</option>
+                    <option value="hard">Trudny</option>
                   </select>
                 </div>
+                <div class="form-group">
+                  <label for="duration">Czas trwania (minuty)</label>
+                  <input type="number" id="duration" min="0" placeholder="np. 120" />
+                </div>
               </div>
 
-              <!-- Współrzędne -->
+              <!-- Dystans -->
               <div class="form-grid">
                 <div class="form-group">
-                  <label for="latitude">Szerokość geograficzna (latitude)</label>
-                  <input type="number" id="latitude" step="0.000001"
-                    placeholder="np. 54.128900" />
+                  <label for="distance">Dystans (metry)</label>
+                  <input type="number" id="distance" min="0" placeholder="np. 5000" />
                 </div>
-                <div class="form-group">
-                  <label for="longitude">Długość geograficzna (longitude)</label>
-                  <input type="number" id="longitude" step="0.000001"
-                    placeholder="np. 20.498500" />
-                </div>
+                <div></div>
               </div>
 
               <!-- Opublikowany -->
@@ -147,36 +133,10 @@
                 <label for="is-published">Opublikowany (widoczny w aplikacji)</label>
               </div>
 
-              <!-- Zdjęcie główne -->
-              <div class="form-group" style="margin-top:8px">
-                <label for="cover-image">Zdjęcie główne</label>
-                <div class="image-upload-area" id="image-upload-area">
-                  <img id="cover-preview" src="" alt="Podgląd zdjęcia"
-                    style="display:none; max-width:100%; max-height:300px;
-                           border-radius:var(--radius); margin-bottom:12px;
-                           object-fit:cover;" />
-                  <label for="cover-image" class="upload-placeholder" id="upload-placeholder">
-                    <span style="font-size:28px">🖼️</span>
-                    <span>Kliknij aby wybrać zdjęcie</span>
-                  </label>
-                  <input type="file" id="cover-image" accept="image/*"
-                    class="file-input-hidden" />
-                  <label for="cover-image" class="btn btn-secondary btn-sm"
-                    style="margin-top:8px; cursor:pointer">
-                    Wybierz plik
-                  </label>
-                  <span id="image-filename"
-                    style="font-size:12px; color:var(--text-muted); margin-left:10px"></span>
-                </div>
-                <p style="font-size:11px; color:var(--text-muted); margin-top:6px">
-                  Zalecany rozmiar: min. 800×600 px, max 5 MB. Formaty: JPG, PNG, WebP.
-                </p>
-              </div>
-
               <!-- Akcje -->
               <div class="form-actions">
                 <button class="btn btn-primary" id="save-btn" type="button">
-                  Zapisz zabytek
+                  Zapisz szlak
                 </button>
                 <button class="btn btn-secondary" id="cancel-btn" type="button">
                   Anuluj
@@ -196,9 +156,9 @@
   <script src="js/supabase-client.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/ui.js"></script>
-  <script src="js/add-monument.js"></script>
+  <script src="js/add-tour.js"></script>
   <script>
-    AddMonument.init();
+    AddTour.init();
   </script>
 </body>
 </html>
