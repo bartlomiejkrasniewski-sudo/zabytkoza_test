@@ -147,7 +147,9 @@
         <tr id="row-${m.id}">
           <td>${escHtml(m.name || '—')}</td>
           <td>
-            <span style="color:var(--text-muted)">—</span>
+            ${m.categories?.name
+              ? `<span class="badge badge-category">${escHtml(m.categories.name)}</span>`
+              : '<span style="color:var(--text-muted)">—</span>'}
           </td>
           <td>
             <label class="toggle" title="${m.is_published ? 'Kliknij aby ukryć' : 'Kliknij aby opublikować'}">

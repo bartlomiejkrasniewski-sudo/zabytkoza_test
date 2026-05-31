@@ -4,7 +4,7 @@ const Monuments = (() => {
   async function loadMonuments() {
     const { data, error } = await window.supabaseClient
       .from('monuments')
-      .select('id, name, category_id, is_published, created_at')
+      .select('id, name, category_id, is_published, created_at, categories(name)')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -58,7 +58,7 @@ const Monuments = (() => {
 
   function getCategories() {
     const cats = allMonuments
-      .map(m => m.category_id)
+      .map(m => m.categories?.name)
       .filter(Boolean);
     return [...new Set(cats)].sort();
   }
