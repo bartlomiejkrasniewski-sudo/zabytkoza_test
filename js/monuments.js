@@ -45,7 +45,7 @@ const Monuments = (() => {
     let result = [...allMonuments];
 
     if (category && category !== '') {
-      result = result.filter(m => m.category_id === category);
+      result = result.filter(m => m.categories?.name === category);
     }
 
     if (query && query.trim() !== '') {
