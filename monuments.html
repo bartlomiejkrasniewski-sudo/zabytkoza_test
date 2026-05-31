@@ -68,11 +68,7 @@
             <h2>Zarządzanie zabytkami</h2>
             <p id="count-label">Ładowanie listy…</p>
           </div>
-          <button
-            class="btn btn-primary"
-            onclick="alert('Funkcja dodawania zabytku – wkrótce dostępna.')">
-            + Dodaj zabytek
-          </button>
+          <a href="add-monument.html" class="btn btn-primary">+ Dodaj zabytek</a>
         </div>
 
         <div class="card">
@@ -164,12 +160,12 @@
           <td>${UI.formatDate(m.created_at)}</td>
           <td>
             <div class="actions-cell">
-              <button
+              <a
+                href="add-monument.html?id=${m.id}"
                 class="btn btn-secondary btn-sm"
-                onclick="alert('Edycja zabytku – wkrótce dostępna.')"
                 title="Edytuj">
                 ✏️ Edytuj
-              </button>
+              </a>
               <button
                 class="btn btn-danger btn-sm"
                 onclick="handleDelete('${m.id}')"
