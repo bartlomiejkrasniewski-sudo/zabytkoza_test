@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zabytkoza – Dodaj ciekawostkę</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div class="app-layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="dashboard.html" class="sidebar-logo">
+          <div class="logo-icon">🏛️</div>
+          <div class="sidebar-logo-text">
+            <span class="app-name">Zabytkoza</span>
+            <span class="app-sub">Panel administracyjny</span>
+          </div>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Nawigacja</div>
+
+        <a href="dashboard.html" class="nav-item" data-page="dashboard">
+          <span class="nav-icon">📊</span> Dashboard
+        </a>
+        <a href="monuments.html" class="nav-item" data-page="monuments">
+          <span class="nav-icon">🏰</span> Zabytki
+        </a>
+        <a href="tours.html" class="nav-item" data-page="tours">
+          <span class="nav-icon">🗺️</span> Szlaki
+        </a>
+        <a href="facts.html" class="nav-item" data-page="facts">
+          <span class="nav-icon">💡</span> Ciekawostki
+        </a>
+        <a href="encyclopedia.html" class="nav-item" data-page="encyclopedia">
+          <span class="nav-icon">📚</span> Encyklopedia
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="nav-item btn-ghost" id="logout-side" style="width:100%">
+          <span class="nav-icon">🚪</span> Wyloguj się
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-content">
+      <header class="topbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="menu-toggle" id="menu-toggle" aria-label="Menu">☰</button>
+          <span class="topbar-title" id="topbar-title">Dodaj ciekawostkę</span>
+        </div>
+        <div class="topbar-actions">
+          <div class="user-badge">
+            <div class="user-avatar" id="user-avatar">A</div>
+            <span class="user-email" id="user-email">ładowanie…</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="logout-btn">Wyloguj</button>
+        </div>
+      </header>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 id="page-title">Dodaj ciekawostkę</h2>
+            <p>Wypełnij poniższe pola i zapisz ciekawostkę do bazy danych.</p>
+          </div>
+          <a href="facts.html" class="btn btn-secondary">← Wróć do listy</a>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Dane ciekawostki</h3>
+          </div>
+          <div class="card-body">
+            <form id="fact-form" onsubmit="return false;">
+
+              <!-- Treść -->
+              <div class="form-group">
+                <label for="content">
+                  Treść ciekawostki <span style="color:var(--danger-light)">*</span>
+                  <span class="char-counter" id="content-counter">0/500</span>
+                </label>
+                <textarea id="content" maxlength="500" rows="5"
+                  placeholder="Wpisz treść ciekawostki…"></textarea>
+              </div>
+
+              <!-- Powiązany zabytek -->
+              <div class="form-group">
+                <label for="monument-id">Powiązany zabytek</label>
+                <select id="monument-id">
+                  <option value="">— brak powiązania —</option>
+                </select>
+              </div>
+
+              <!-- Źródło -->
+              <div class="form-group">
+                <label for="source">Źródło</label>
+                <input type="text" id="source"
+                  placeholder="np. Wikipedia, książka, archiwum" />
+              </div>
+
+              <!-- Opublikowana -->
+              <div class="form-check">
+                <input type="checkbox" id="is-published" checked />
+                <label for="is-published">Opublikowana (widoczna w aplikacji)</label>
+              </div>
+
+              <!-- Akcje -->
+              <div class="form-actions">
+                <button class="btn btn-primary" id="save-btn" type="button">
+                  Zapisz ciekawostkę
+                </button>
+                <button class="btn btn-secondary" id="cancel-btn" type="button">
+                  Anuluj
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/add-fact.js"></script>
+  <script>
+    AddFact.init();
+  </script>
+</body>
+</html>

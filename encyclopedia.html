@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Zabytkoza – Szlaki turystyczne</title>
+  <title>Zabytkoza – Encyklopedia</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -54,7 +54,7 @@
       <header class="topbar">
         <div style="display:flex;align-items:center;gap:12px">
           <button class="menu-toggle" id="menu-toggle" aria-label="Menu">☰</button>
-          <span class="topbar-title">Szlaki</span>
+          <span class="topbar-title">Encyklopedia</span>
         </div>
         <div class="topbar-actions">
           <div class="user-badge">
@@ -68,23 +68,32 @@
       <main class="page-content">
         <div class="page-header">
           <div>
-            <h2>Szlaki turystyczne</h2>
+            <h2>Encyklopedia</h2>
             <p id="count-label">Ładowanie listy…</p>
           </div>
-          <a href="add-tour.html" class="btn btn-primary">+ Dodaj szlak</a>
+          <a href="add-encyclopedia.html" class="btn btn-primary">+ Dodaj artykuł</a>
         </div>
 
         <div class="card">
           <div class="card-header">
-            <h3>Lista szlaków</h3>
+            <h3>Lista artykułów</h3>
             <div class="filters-bar">
               <input
                 type="search"
                 class="search-input"
                 id="search-input"
-                placeholder="Szukaj po nazwie…"
+                placeholder="Szukaj po tytule…"
                 aria-label="Szukaj"
               />
+              <select class="filter-select" id="category-filter" aria-label="Filtruj po kategorii">
+                <option value="">Wszystkie kategorie</option>
+                <option value="Architektura">Architektura</option>
+                <option value="Historia">Historia</option>
+                <option value="Przyroda">Przyroda</option>
+                <option value="Kultura">Kultura</option>
+                <option value="Legendy">Legendy</option>
+                <option value="Inne">Inne</option>
+              </select>
             </div>
           </div>
 
@@ -92,17 +101,16 @@
             <table>
               <thead>
                 <tr>
-                  <th>Nazwa</th>
-                  <th>Trudność</th>
-                  <th>Czas</th>
-                  <th>Dystans</th>
+                  <th>Tytuł</th>
+                  <th>Kategoria</th>
+                  <th>Powiązany zabytek</th>
                   <th>Opublikowany</th>
                   <th>Akcje</th>
                 </tr>
               </thead>
-              <tbody id="tours-tbody">
+              <tbody id="encyclopedia-tbody">
                 <tr class="loading-row">
-                  <td colspan="6"><span class="spinner"></span>Ładowanie szlaków…</td>
+                  <td colspan="5"><span class="spinner"></span>Ładowanie artykułów…</td>
                 </tr>
               </tbody>
             </table>
@@ -117,10 +125,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="js/supabase-client.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/tours.js"></script>
+  <script src="js/encyclopedia.js"></script>
   <script src="js/ui.js"></script>
   <script>
-    let searchQuery = '';
+    let searchQuery     = '';
+    let selectedCategory = '';
 
     function escHtml(str) {
       return String(str)
@@ -129,49 +138,46 @@
     }
 
     function renderTable() {
-      const filtered  = Tours.filterTours(searchQuery);
-      const tbody     = document.getElementById('tours-tbody');
+      const filtered   = Encyclopedia.filterEntries(searchQuery, selectedCategory);
+      const tbody      = document.getElementById('encyclopedia-tbody');
       const countLabel = document.getElementById('count-label');
       countLabel.textContent = `Wyświetlono ${filtered.length} rekordów`;
 
       if (filtered.length === 0) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Brak szlaków w bazie.</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Brak artykułów w bazie.</td></tr>';
         return;
       }
 
-      tbody.innerHTML = filtered.map(t => {
-        const diff = Tours.difficultyBadge(t.difficulty);
+      tbody.innerHTML = filtered.map(e => {
+        const category = e.category
+          ? `<span class="badge badge-category">${escHtml(e.category)}</span>`
+          : '<span style="color:var(--text-muted)">—</span>';
+        const monument = e.monuments?.name
+          ? escHtml(e.monuments.name)
+          : '<span style="color:var(--text-muted)">—</span>';
         return `
-          <tr id="row-${t.id}">
-            <td>${escHtml(t.name || '—')}</td>
+          <tr id="row-${e.id}">
+            <td>${escHtml(e.title || '—')}</td>
+            <td>${category}</td>
+            <td>${monument}</td>
             <td>
-              ${diff.cls
-                ? `<span class="badge ${diff.cls}">${escHtml(diff.label)}</span>`
-                : `<span style="color:var(--text-muted)">—</span>`}
-            </td>
-            <td>${escHtml(Tours.formatDuration(t.duration_minutes))}</td>
-            <td>${escHtml(Tours.formatDistance(t.distance_meters))}</td>
-            <td>
-              <label class="toggle" title="${t.is_published ? 'Kliknij aby ukryć' : 'Kliknij aby opublikować'}">
+              <label class="toggle" title="${e.is_published ? 'Kliknij aby ukryć' : 'Kliknij aby opublikować'}">
                 <input
                   type="checkbox"
-                  ${t.is_published ? 'checked' : ''}
-                  onchange="handleToggle('${t.id}', ${t.is_published})"
+                  ${e.is_published ? 'checked' : ''}
+                  onchange="handleToggle('${e.id}', ${e.is_published})"
                 />
                 <span class="toggle-slider"></span>
               </label>
             </td>
             <td>
               <div class="actions-cell">
-                <a href="add-tour.html?id=${t.id}" class="btn btn-secondary btn-sm" title="Edytuj">
+                <a href="add-encyclopedia.html?id=${e.id}" class="btn btn-secondary btn-sm" title="Edytuj">
                   ✏️ Edytuj
-                </a>
-                <a href="tour-stops.html?id=${t.id}" class="btn btn-secondary btn-sm" title="Punkty szlaku">
-                  📍 Punkty
                 </a>
                 <button
                   class="btn btn-danger btn-sm"
-                  onclick="handleDelete('${t.id}')"
+                  onclick="handleDelete('${e.id}')"
                   title="Usuń">
                   🗑️ Usuń
                 </button>
@@ -183,10 +189,10 @@
 
     async function handleDelete(id) {
       try {
-        const deleted = await Tours.deleteTour(id);
+        const deleted = await Encyclopedia.deleteEntry(id);
         if (deleted) {
           renderTable();
-          UI.showToast('Szlak został usunięty.', 'success');
+          UI.showToast('Artykuł został usunięty.', 'success');
         }
       } catch (err) {
         UI.showToast(`Błąd usuwania: ${err.message}`, 'error');
@@ -195,8 +201,8 @@
 
     async function handleToggle(id, currentStatus) {
       try {
-        const newStatus = await Tours.togglePublish(id, currentStatus);
-        UI.showToast(newStatus ? 'Szlak opublikowany.' : 'Szlak ukryty.', 'success');
+        const newStatus = await Encyclopedia.togglePublish(id, currentStatus);
+        UI.showToast(newStatus ? 'Artykuł opublikowany.' : 'Artykuł ukryty.', 'success');
         renderTable();
       } catch (err) {
         UI.showToast(`Błąd zmiany statusu: ${err.message}`, 'error');
@@ -206,21 +212,26 @@
 
     (async () => {
       await Auth.checkAuth();
-      UI.initSidebar('tours');
+      UI.initSidebar('encyclopedia');
       await UI.populateUserBadge();
 
       try {
-        await Tours.loadTours();
+        await Encyclopedia.loadEntries();
         renderTable();
       } catch (err) {
-        UI.showToast(`Błąd pobierania szlaków: ${err.message}`, 'error');
-        document.getElementById('tours-tbody').innerHTML =
-          '<tr class="empty-row"><td colspan="6">Błąd ładowania danych z bazy.</td></tr>';
+        UI.showToast(`Błąd pobierania artykułów: ${err.message}`, 'error');
+        document.getElementById('encyclopedia-tbody').innerHTML =
+          '<tr class="empty-row"><td colspan="5">Błąd ładowania danych z bazy.</td></tr>';
         document.getElementById('count-label').textContent = 'Błąd ładowania';
       }
 
       document.getElementById('search-input').addEventListener('input', e => {
         searchQuery = e.target.value;
+        renderTable();
+      });
+
+      document.getElementById('category-filter').addEventListener('change', e => {
+        selectedCategory = e.target.value;
         renderTable();
       });
     })();

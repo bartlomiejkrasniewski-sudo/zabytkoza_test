@@ -1,3 +1,5 @@
+const STORAGE_BUCKET = 'tour-images';
+
 const AddTour = (() => {
   let editId = null;
 
@@ -22,6 +24,11 @@ const AddTour = (() => {
     document.getElementById('distance').value          = data.distance_meters   ?? '';
     document.getElementById('is-published').checked   = !!data.is_published;
 
+    if (data.cover_image_url) {
+      document.getElementById('cover-image-existing').style.display = 'block';
+      document.getElementById('cover-image-existing-img').src = data.cover_image_url;
+    }
+
     updateCharCounter();
   }
 
@@ -43,6 +50,19 @@ const AddTour = (() => {
     return true;
   }
 
+  async function uploadCoverImage(file, tourId) {
+    const ext = file.name.split('.').pop();
+    const path = `tours/${tourId}/cover.${ext}`;
+    const { error } = await window.supabaseClient.storage
+      .from(STORAGE_BUCKET)
+      .upload(path, file, { upsert: true });
+    if (error) throw error;
+    const { data } = window.supabaseClient.storage
+      .from(STORAGE_BUCKET)
+      .getPublicUrl(path);
+    return data.publicUrl;
+  }
+
   async function saveTour() {
     if (!validate()) return;
 
@@ -61,6 +81,8 @@ const AddTour = (() => {
     btn.textContent = 'Zapisywanie…';
 
     try {
+      let savedTourId = editId;
+
       if (editId) {
         const { error } = await window.supabaseClient
           .from('tours')
@@ -68,10 +90,21 @@ const AddTour = (() => {
           .eq('id', editId);
         if (error) throw error;
       } else {
-        const { error } = await window.supabaseClient
+        const { data: inserted, error } = await window.supabaseClient
           .from('tours')
-          .insert(payload);
+          .insert(payload)
+          .select();
         if (error) throw error;
+        savedTourId = inserted[0].id;
+      }
+
+      const fileInput = document.getElementById('cover-image');
+      if (fileInput.files.length > 0) {
+        const imageUrl = await uploadCoverImage(fileInput.files[0], savedTourId);
+        await window.supabaseClient
+          .from('tours')
+          .update({ cover_image_url: imageUrl })
+          .eq('id', savedTourId);
       }
 
       UI.showToast(editId ? 'Zmiany zostały zapisane!' : 'Szlak dodany!', 'success');
@@ -109,6 +142,23 @@ const AddTour = (() => {
 
     document.getElementById('cancel-btn')
       .addEventListener('click', () => { window.location.href = 'tours.html'; });
+
+    document.getElementById('cover-image')
+      .addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const preview = document.getElementById('cover-image-preview');
+        document.getElementById('cover-image-img').src = URL.createObjectURL(file);
+        preview.style.display = 'block';
+      });
+
+    document.getElementById('remove-cover-image')
+      .addEventListener('click', () => {
+        const input = document.getElementById('cover-image');
+        input.value = '';
+        document.getElementById('cover-image-preview').style.display = 'none';
+        document.getElementById('cover-image-img').src = '';
+      });
   }
 
   return { init };

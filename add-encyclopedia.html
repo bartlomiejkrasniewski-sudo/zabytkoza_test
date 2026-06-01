@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Zabytkoza – Dodaj szlak</title>
+  <title>Zabytkoza – Dodaj artykuł</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -54,7 +54,7 @@
       <header class="topbar">
         <div style="display:flex;align-items:center;gap:12px">
           <button class="menu-toggle" id="menu-toggle" aria-label="Menu">☰</button>
-          <span class="topbar-title" id="topbar-title">Dodaj szlak</span>
+          <span class="topbar-title" id="topbar-title">Dodaj artykuł</span>
         </div>
         <div class="topbar-actions">
           <div class="user-badge">
@@ -68,71 +68,72 @@
       <main class="page-content">
         <div class="page-header">
           <div>
-            <h2 id="page-title">Dodaj szlak</h2>
-            <p>Wypełnij poniższe pola i zapisz szlak do bazy danych.</p>
+            <h2 id="page-title">Dodaj artykuł</h2>
+            <p>Wypełnij poniższe pola i zapisz artykuł do bazy danych.</p>
           </div>
-          <a href="tours.html" class="btn btn-secondary">← Wróć do listy</a>
+          <a href="encyclopedia.html" class="btn btn-secondary">← Wróć do listy</a>
         </div>
 
         <div class="card">
           <div class="card-header">
-            <h3>Dane szlaku</h3>
+            <h3>Dane artykułu</h3>
           </div>
           <div class="card-body">
-            <form id="tour-form" onsubmit="return false;">
+            <form id="encyclopedia-form" onsubmit="return false;">
 
-              <!-- Nazwa -->
+              <!-- Tytuł -->
               <div class="form-group">
-                <label for="name">Nazwa <span style="color:var(--danger-light)">*</span></label>
-                <input type="text" id="name" placeholder="np. Szlak Zamków Warmii" />
+                <label for="title">Tytuł <span style="color:var(--danger-light)">*</span></label>
+                <input type="text" id="title" placeholder="np. Zamek Lidzbarski – historia i architektura" />
               </div>
 
-              <!-- Krótki opis -->
+              <!-- Slug -->
               <div class="form-group">
-                <label for="short-description">
-                  Krótki opis
-                  <span class="char-counter" id="short-desc-counter">0/200</span>
+                <label for="slug">Slug URL
+                  <span style="font-size:11px; color:var(--text-muted); font-weight:400;">
+                    (auto-generowany z tytułu, edytowalny)
+                  </span>
                 </label>
-                <textarea id="short-description" maxlength="200" rows="3"
-                  placeholder="Krótkie streszczenie szlaku…"></textarea>
+                <input type="text" id="slug" placeholder="np. zamek-lidzbarski-historia-i-architektura" />
               </div>
 
-              <!-- Pełny opis -->
-              <div class="form-group">
-                <label for="description">Pełny opis</label>
-                <textarea id="description" rows="6"
-                  placeholder="Szczegółowy opis szlaku, atrakcje, wskazówki…"></textarea>
-              </div>
-
-              <!-- Trudność + Czas -->
+              <!-- Kategoria + Zabytek -->
               <div class="form-grid">
                 <div class="form-group">
-                  <label for="difficulty">Trudność</label>
-                  <select id="difficulty">
-                    <option value="">— brak —</option>
-                    <option value="easy">Łatwy</option>
-                    <option value="medium">Średni</option>
-                    <option value="hard">Trudny</option>
+                  <label for="category">Kategoria</label>
+                  <select id="category">
+                    <option value="">— brak kategorii —</option>
+                    <option value="Architektura">Architektura</option>
+                    <option value="Historia">Historia</option>
+                    <option value="Przyroda">Przyroda</option>
+                    <option value="Kultura">Kultura</option>
+                    <option value="Legendy">Legendy</option>
+                    <option value="Inne">Inne</option>
                   </select>
                 </div>
                 <div class="form-group">
-                  <label for="duration">Czas trwania (minuty)</label>
-                  <input type="number" id="duration" min="0" placeholder="np. 120" />
+                  <label for="monument-id">Powiązany zabytek</label>
+                  <select id="monument-id">
+                    <option value="">— brak powiązania —</option>
+                  </select>
                 </div>
               </div>
 
-              <!-- Dystans -->
-              <div class="form-grid">
-                <div class="form-group">
-                  <label for="distance">Dystans (metry)</label>
-                  <input type="number" id="distance" min="0" placeholder="np. 5000" />
-                </div>
-                <div></div>
+              <!-- Treść -->
+              <div class="form-group">
+                <label for="content">
+                  Treść artykułu <span style="color:var(--danger-light)">*</span>
+                  <span style="font-size:11px; color:var(--text-muted); font-weight:400; margin-left:8px;">
+                    obsługuje Markdown (# nagłówki, **pogrubienie**, *kursywa*, listy)
+                  </span>
+                </label>
+                <textarea id="content" rows="12"
+                  placeholder="Wpisz treść artykułu w formacie Markdown…"></textarea>
               </div>
 
               <!-- Zdjęcie okładki -->
               <div class="form-group">
-                <label for="cover-image">Zdjęcie okładki szlaku</label>
+                <label for="cover-image">Zdjęcie okładki artykułu</label>
                 <input type="file" id="cover-image" accept="image/*">
                 <div id="cover-image-preview" style="margin-top:8px; display:none;">
                   <img id="cover-image-img" style="max-width:300px; max-height:200px; border-radius:8px;">
@@ -148,14 +149,14 @@
 
               <!-- Opublikowany -->
               <div class="form-check">
-                <input type="checkbox" id="is-published" />
+                <input type="checkbox" id="is-published" checked />
                 <label for="is-published">Opublikowany (widoczny w aplikacji)</label>
               </div>
 
               <!-- Akcje -->
               <div class="form-actions">
                 <button class="btn btn-primary" id="save-btn" type="button">
-                  Zapisz szlak
+                  Zapisz artykuł
                 </button>
                 <button class="btn btn-secondary" id="cancel-btn" type="button">
                   Anuluj
@@ -175,9 +176,9 @@
   <script src="js/supabase-client.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/ui.js"></script>
-  <script src="js/add-tour.js"></script>
+  <script src="js/add-encyclopedia.js"></script>
   <script>
-    AddTour.init();
+    AddEncyclopedia.init();
   </script>
 </body>
 </html>

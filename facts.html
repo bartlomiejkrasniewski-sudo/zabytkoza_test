@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Zabytkoza – Szlaki turystyczne</title>
+  <title>Zabytkoza – Ciekawostki</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -54,7 +54,7 @@
       <header class="topbar">
         <div style="display:flex;align-items:center;gap:12px">
           <button class="menu-toggle" id="menu-toggle" aria-label="Menu">☰</button>
-          <span class="topbar-title">Szlaki</span>
+          <span class="topbar-title">Ciekawostki</span>
         </div>
         <div class="topbar-actions">
           <div class="user-badge">
@@ -68,21 +68,21 @@
       <main class="page-content">
         <div class="page-header">
           <div>
-            <h2>Szlaki turystyczne</h2>
+            <h2>Ciekawostki</h2>
             <p id="count-label">Ładowanie listy…</p>
           </div>
-          <a href="add-tour.html" class="btn btn-primary">+ Dodaj szlak</a>
+          <a href="add-fact.html" class="btn btn-primary">+ Dodaj ciekawostkę</a>
         </div>
 
         <div class="card">
           <div class="card-header">
-            <h3>Lista szlaków</h3>
+            <h3>Lista ciekawostek</h3>
             <div class="filters-bar">
               <input
                 type="search"
                 class="search-input"
                 id="search-input"
-                placeholder="Szukaj po nazwie…"
+                placeholder="Szukaj po treści…"
                 aria-label="Szukaj"
               />
             </div>
@@ -92,17 +92,15 @@
             <table>
               <thead>
                 <tr>
-                  <th>Nazwa</th>
-                  <th>Trudność</th>
-                  <th>Czas</th>
-                  <th>Dystans</th>
-                  <th>Opublikowany</th>
+                  <th>Treść</th>
+                  <th>Zabytek</th>
+                  <th>Opublikowana</th>
                   <th>Akcje</th>
                 </tr>
               </thead>
-              <tbody id="tours-tbody">
+              <tbody id="facts-tbody">
                 <tr class="loading-row">
-                  <td colspan="6"><span class="spinner"></span>Ładowanie szlaków…</td>
+                  <td colspan="4"><span class="spinner"></span>Ładowanie ciekawostek…</td>
                 </tr>
               </tbody>
             </table>
@@ -117,7 +115,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="js/supabase-client.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/tours.js"></script>
+  <script src="js/facts.js"></script>
   <script src="js/ui.js"></script>
   <script>
     let searchQuery = '';
@@ -129,49 +127,41 @@
     }
 
     function renderTable() {
-      const filtered  = Tours.filterTours(searchQuery);
-      const tbody     = document.getElementById('tours-tbody');
+      const filtered   = Facts.filterFacts(searchQuery);
+      const tbody      = document.getElementById('facts-tbody');
       const countLabel = document.getElementById('count-label');
       countLabel.textContent = `Wyświetlono ${filtered.length} rekordów`;
 
       if (filtered.length === 0) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Brak szlaków w bazie.</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="4">Brak ciekawostek w bazie.</td></tr>';
         return;
       }
 
-      tbody.innerHTML = filtered.map(t => {
-        const diff = Tours.difficultyBadge(t.difficulty);
+      tbody.innerHTML = filtered.map(f => {
+        const excerpt = escHtml((f.content || '').slice(0, 80)) + ((f.content || '').length > 80 ? '…' : '');
+        const monument = f.monuments?.name ? escHtml(f.monuments.name) : '<span style="color:var(--text-muted)">—</span>';
         return `
-          <tr id="row-${t.id}">
-            <td>${escHtml(t.name || '—')}</td>
+          <tr id="row-${f.id}">
+            <td>${excerpt}</td>
+            <td>${monument}</td>
             <td>
-              ${diff.cls
-                ? `<span class="badge ${diff.cls}">${escHtml(diff.label)}</span>`
-                : `<span style="color:var(--text-muted)">—</span>`}
-            </td>
-            <td>${escHtml(Tours.formatDuration(t.duration_minutes))}</td>
-            <td>${escHtml(Tours.formatDistance(t.distance_meters))}</td>
-            <td>
-              <label class="toggle" title="${t.is_published ? 'Kliknij aby ukryć' : 'Kliknij aby opublikować'}">
+              <label class="toggle" title="${f.is_published ? 'Kliknij aby ukryć' : 'Kliknij aby opublikować'}">
                 <input
                   type="checkbox"
-                  ${t.is_published ? 'checked' : ''}
-                  onchange="handleToggle('${t.id}', ${t.is_published})"
+                  ${f.is_published ? 'checked' : ''}
+                  onchange="handleToggle('${f.id}', ${f.is_published})"
                 />
                 <span class="toggle-slider"></span>
               </label>
             </td>
             <td>
               <div class="actions-cell">
-                <a href="add-tour.html?id=${t.id}" class="btn btn-secondary btn-sm" title="Edytuj">
+                <a href="add-fact.html?id=${f.id}" class="btn btn-secondary btn-sm" title="Edytuj">
                   ✏️ Edytuj
-                </a>
-                <a href="tour-stops.html?id=${t.id}" class="btn btn-secondary btn-sm" title="Punkty szlaku">
-                  📍 Punkty
                 </a>
                 <button
                   class="btn btn-danger btn-sm"
-                  onclick="handleDelete('${t.id}')"
+                  onclick="handleDelete('${f.id}')"
                   title="Usuń">
                   🗑️ Usuń
                 </button>
@@ -183,10 +173,10 @@
 
     async function handleDelete(id) {
       try {
-        const deleted = await Tours.deleteTour(id);
+        const deleted = await Facts.deleteFact(id);
         if (deleted) {
           renderTable();
-          UI.showToast('Szlak został usunięty.', 'success');
+          UI.showToast('Ciekawostka została usunięta.', 'success');
         }
       } catch (err) {
         UI.showToast(`Błąd usuwania: ${err.message}`, 'error');
@@ -195,8 +185,8 @@
 
     async function handleToggle(id, currentStatus) {
       try {
-        const newStatus = await Tours.togglePublish(id, currentStatus);
-        UI.showToast(newStatus ? 'Szlak opublikowany.' : 'Szlak ukryty.', 'success');
+        const newStatus = await Facts.togglePublish(id, currentStatus);
+        UI.showToast(newStatus ? 'Ciekawostka opublikowana.' : 'Ciekawostka ukryta.', 'success');
         renderTable();
       } catch (err) {
         UI.showToast(`Błąd zmiany statusu: ${err.message}`, 'error');
@@ -206,16 +196,16 @@
 
     (async () => {
       await Auth.checkAuth();
-      UI.initSidebar('tours');
+      UI.initSidebar('facts');
       await UI.populateUserBadge();
 
       try {
-        await Tours.loadTours();
+        await Facts.loadFacts();
         renderTable();
       } catch (err) {
-        UI.showToast(`Błąd pobierania szlaków: ${err.message}`, 'error');
-        document.getElementById('tours-tbody').innerHTML =
-          '<tr class="empty-row"><td colspan="6">Błąd ładowania danych z bazy.</td></tr>';
+        UI.showToast(`Błąd pobierania ciekawostek: ${err.message}`, 'error');
+        document.getElementById('facts-tbody').innerHTML =
+          '<tr class="empty-row"><td colspan="4">Błąd ładowania danych z bazy.</td></tr>';
         document.getElementById('count-label').textContent = 'Błąd ładowania';
       }
 
