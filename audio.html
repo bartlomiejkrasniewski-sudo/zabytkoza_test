@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Zabytkoza – Encyklopedia</title>
+  <title>Zabytkoza – Audioprzewodniki</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -57,7 +57,7 @@
       <header class="topbar">
         <div style="display:flex;align-items:center;gap:12px">
           <button class="menu-toggle" id="menu-toggle" aria-label="Menu">☰</button>
-          <span class="topbar-title">Encyklopedia</span>
+          <span class="topbar-title">Audioprzewodniki</span>
         </div>
         <div class="topbar-actions">
           <div class="user-badge">
@@ -71,31 +71,18 @@
       <main class="page-content">
         <div class="page-header">
           <div>
-            <h2>Encyklopedia</h2>
+            <h2>Audioprzewodniki</h2>
             <p id="count-label">Ładowanie listy…</p>
           </div>
-          <a href="add-encyclopedia.html" class="btn btn-primary">+ Dodaj artykuł</a>
+          <a href="add-audio.html" class="btn btn-primary">+ Dodaj nagranie</a>
         </div>
 
         <div class="card">
           <div class="card-header">
-            <h3>Lista artykułów</h3>
+            <h3>Lista nagrań</h3>
             <div class="filters-bar">
-              <input
-                type="search"
-                class="search-input"
-                id="search-input"
-                placeholder="Szukaj po tytule…"
-                aria-label="Szukaj"
-              />
-              <select class="filter-select" id="category-filter" aria-label="Filtruj po kategorii">
-                <option value="">Wszystkie kategorie</option>
-                <option value="Architektura">Architektura</option>
-                <option value="Historia">Historia</option>
-                <option value="Przyroda">Przyroda</option>
-                <option value="Kultura">Kultura</option>
-                <option value="Legendy">Legendy</option>
-                <option value="Inne">Inne</option>
+              <select id="monument-filter" class="search-input" style="width:auto;min-width:200px">
+                <option value="">— wszystkie zabytki —</option>
               </select>
             </div>
           </div>
@@ -105,15 +92,16 @@
               <thead>
                 <tr>
                   <th>Tytuł</th>
-                  <th>Kategoria</th>
-                  <th>Powiązany zabytek</th>
+                  <th>Zabytek</th>
+                  <th>Czas trwania</th>
+                  <th>Kolejność</th>
                   <th>Opublikowany</th>
                   <th>Akcje</th>
                 </tr>
               </thead>
-              <tbody id="encyclopedia-tbody">
+              <tbody id="audio-tbody">
                 <tr class="loading-row">
-                  <td colspan="5"><span class="spinner"></span>Ładowanie artykułów…</td>
+                  <td colspan="6"><span class="spinner"></span>Ładowanie nagrań…</td>
                 </tr>
               </tbody>
             </table>
@@ -128,11 +116,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="js/supabase-client.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/encyclopedia.js"></script>
+  <script src="js/audio.js"></script>
   <script src="js/ui.js"></script>
   <script>
-    let searchQuery     = '';
-    let selectedCategory = '';
+    let selectedMonumentId = '';
+    let allMonuments = [];
 
     function escHtml(str) {
       return String(str)
@@ -141,46 +129,46 @@
     }
 
     function renderTable() {
-      const filtered   = Encyclopedia.filterEntries(searchQuery, selectedCategory);
-      const tbody      = document.getElementById('encyclopedia-tbody');
+      const filtered   = Audio.filterByMonument(selectedMonumentId);
+      const tbody      = document.getElementById('audio-tbody');
       const countLabel = document.getElementById('count-label');
       countLabel.textContent = `Wyświetlono ${filtered.length} rekordów`;
 
       if (filtered.length === 0) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Brak artykułów w bazie.</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Brak nagrań w bazie.</td></tr>';
         return;
       }
 
-      tbody.innerHTML = filtered.map(e => {
-        const category = e.category
-          ? `<span class="badge badge-category">${escHtml(e.category)}</span>`
+      tbody.innerHTML = filtered.map(a => {
+        const title    = escHtml(a.title || '');
+        const monument = a.monuments?.name
+          ? escHtml(a.monuments.name)
           : '<span style="color:var(--text-muted)">—</span>';
-        const monument = e.monuments?.name
-          ? escHtml(e.monuments.name)
-          : '<span style="color:var(--text-muted)">—</span>';
+        const duration = escHtml(Audio.formatDuration(a.duration_seconds));
         return `
-          <tr id="row-${e.id}">
-            <td>${escHtml(e.title || '—')}</td>
-            <td>${category}</td>
+          <tr id="row-${a.id}">
+            <td>${title}</td>
             <td>${monument}</td>
+            <td>${duration}</td>
+            <td>${a.sort_order ?? 0}</td>
             <td>
-              <label class="toggle" title="${e.is_published ? 'Kliknij aby ukryć' : 'Kliknij aby opublikować'}">
+              <label class="toggle" title="${a.is_published ? 'Kliknij aby ukryć' : 'Kliknij aby opublikować'}">
                 <input
                   type="checkbox"
-                  ${e.is_published ? 'checked' : ''}
-                  onchange="handleToggle('${e.id}', ${e.is_published})"
+                  ${a.is_published ? 'checked' : ''}
+                  onchange="handleToggle('${a.id}', ${a.is_published})"
                 />
                 <span class="toggle-slider"></span>
               </label>
             </td>
             <td>
               <div class="actions-cell">
-                <a href="add-encyclopedia.html?id=${e.id}" class="btn btn-secondary btn-sm" title="Edytuj">
+                <a href="add-audio.html?id=${a.id}" class="btn btn-secondary btn-sm" title="Edytuj">
                   ✏️ Edytuj
                 </a>
                 <button
                   class="btn btn-danger btn-sm"
-                  onclick="handleDelete('${e.id}')"
+                  onclick="handleDelete('${a.id}')"
                   title="Usuń">
                   🗑️ Usuń
                 </button>
@@ -192,10 +180,10 @@
 
     async function handleDelete(id) {
       try {
-        const deleted = await Encyclopedia.deleteEntry(id);
+        const deleted = await Audio.deleteAudio(id);
         if (deleted) {
           renderTable();
-          UI.showToast('Artykuł został usunięty.', 'success');
+          UI.showToast('Nagranie zostało usunięte.', 'success');
         }
       } catch (err) {
         UI.showToast(`Błąd usuwania: ${err.message}`, 'error');
@@ -204,8 +192,8 @@
 
     async function handleToggle(id, currentStatus) {
       try {
-        const newStatus = await Encyclopedia.togglePublish(id, currentStatus);
-        UI.showToast(newStatus ? 'Artykuł opublikowany.' : 'Artykuł ukryty.', 'success');
+        const newStatus = await Audio.togglePublish(id, currentStatus);
+        UI.showToast(newStatus ? 'Nagranie opublikowane.' : 'Nagranie ukryte.', 'success');
         renderTable();
       } catch (err) {
         UI.showToast(`Błąd zmiany statusu: ${err.message}`, 'error');
@@ -213,28 +201,41 @@
       }
     }
 
+    function populateMonumentFilter(audioList) {
+      const seen = new Map();
+      audioList.forEach(a => {
+        if (a.monument_id && a.monuments?.name) {
+          seen.set(String(a.monument_id), a.monuments.name);
+        }
+      });
+
+      const select = document.getElementById('monument-filter');
+      seen.forEach((name, id) => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = name;
+        select.appendChild(opt);
+      });
+    }
+
     (async () => {
       await Auth.checkAuth();
-      UI.initSidebar('encyclopedia');
+      UI.initSidebar('audio');
       await UI.populateUserBadge();
 
       try {
-        await Encyclopedia.loadEntries();
+        const list = await Audio.loadAudio();
+        populateMonumentFilter(list);
         renderTable();
       } catch (err) {
-        UI.showToast(`Błąd pobierania artykułów: ${err.message}`, 'error');
-        document.getElementById('encyclopedia-tbody').innerHTML =
-          '<tr class="empty-row"><td colspan="5">Błąd ładowania danych z bazy.</td></tr>';
+        UI.showToast(`Błąd pobierania nagrań: ${err.message}`, 'error');
+        document.getElementById('audio-tbody').innerHTML =
+          '<tr class="empty-row"><td colspan="6">Błąd ładowania danych z bazy.</td></tr>';
         document.getElementById('count-label').textContent = 'Błąd ładowania';
       }
 
-      document.getElementById('search-input').addEventListener('input', e => {
-        searchQuery = e.target.value;
-        renderTable();
-      });
-
-      document.getElementById('category-filter').addEventListener('change', e => {
-        selectedCategory = e.target.value;
+      document.getElementById('monument-filter').addEventListener('change', e => {
+        selectedMonumentId = e.target.value;
         renderTable();
       });
     })();

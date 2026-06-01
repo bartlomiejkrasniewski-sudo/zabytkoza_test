@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Zabytkoza – Dodaj szlak</title>
+  <title>Zabytkoza – Dodaj nagranie</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -57,7 +57,7 @@
       <header class="topbar">
         <div style="display:flex;align-items:center;gap:12px">
           <button class="menu-toggle" id="menu-toggle" aria-label="Menu">☰</button>
-          <span class="topbar-title" id="topbar-title">Dodaj szlak</span>
+          <span class="topbar-title" id="topbar-title">Dodaj nagranie</span>
         </div>
         <div class="topbar-actions">
           <div class="user-badge">
@@ -71,94 +71,78 @@
       <main class="page-content">
         <div class="page-header">
           <div>
-            <h2 id="page-title">Dodaj szlak</h2>
-            <p>Wypełnij poniższe pola i zapisz szlak do bazy danych.</p>
+            <h2 id="page-title">Dodaj nagranie</h2>
+            <p>Wypełnij poniższe pola i zapisz nagranie do bazy danych.</p>
           </div>
-          <a href="tours.html" class="btn btn-secondary">← Wróć do listy</a>
+          <a href="audio.html" class="btn btn-secondary">← Wróć do listy</a>
         </div>
 
         <div class="card">
           <div class="card-header">
-            <h3>Dane szlaku</h3>
+            <h3>Dane nagrania</h3>
           </div>
           <div class="card-body">
-            <form id="tour-form" onsubmit="return false;">
+            <form id="audio-form" onsubmit="return false;">
 
-              <!-- Nazwa -->
+              <!-- Zabytek -->
               <div class="form-group">
-                <label for="name">Nazwa <span style="color:var(--danger-light)">*</span></label>
-                <input type="text" id="name" placeholder="np. Szlak Zamków Warmii" />
-              </div>
-
-              <!-- Krótki opis -->
-              <div class="form-group">
-                <label for="short-description">
-                  Krótki opis
-                  <span class="char-counter" id="short-desc-counter">0/200</span>
+                <label for="monument-id">
+                  Zabytek <span style="color:var(--danger-light)">*</span>
                 </label>
-                <textarea id="short-description" maxlength="200" rows="3"
-                  placeholder="Krótkie streszczenie szlaku…"></textarea>
+                <select id="monument-id">
+                  <option value="">— wybierz zabytek —</option>
+                </select>
               </div>
 
-              <!-- Pełny opis -->
+              <!-- Tytuł -->
               <div class="form-group">
-                <label for="description">Pełny opis</label>
-                <textarea id="description" rows="6"
-                  placeholder="Szczegółowy opis szlaku, atrakcje, wskazówki…"></textarea>
+                <label for="title">
+                  Tytuł nagrania <span style="color:var(--danger-light)">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  value="Audioprzewodnik"
+                  placeholder="np. Historia zamku, Architektura, Ciekawostki"
+                />
               </div>
 
-              <!-- Trudność + Czas -->
-              <div class="form-grid">
-                <div class="form-group">
-                  <label for="difficulty">Trudność</label>
-                  <select id="difficulty">
-                    <option value="">— brak —</option>
-                    <option value="easy">Łatwy</option>
-                    <option value="medium">Średni</option>
-                    <option value="hard">Trudny</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label for="duration">Czas trwania (minuty)</label>
-                  <input type="number" id="duration" min="0" placeholder="np. 120" />
-                </div>
-              </div>
-
-              <!-- Dystans -->
-              <div class="form-grid">
-                <div class="form-group">
-                  <label for="distance">Dystans (metry)</label>
-                  <input type="number" id="distance" min="0" placeholder="np. 5000" />
-                </div>
-                <div></div>
-              </div>
-
-              <!-- Zdjęcie okładki -->
+              <!-- Plik audio -->
               <div class="form-group">
-                <label for="cover-image">Zdjęcie okładki szlaku</label>
-                <input type="file" id="cover-image" accept="image/*">
-                <div id="cover-image-preview" style="margin-top:8px; display:none;">
-                  <img id="cover-image-img" style="max-width:300px; max-height:200px; border-radius:8px;">
-                  <button type="button" id="remove-cover-image" style="display:block; margin-top:4px;">
-                    Usuń zdjęcie
-                  </button>
+                <label for="audio-file">
+                  Plik audio
+                  <span id="audio-file-required" style="color:var(--danger-light)">*</span>
+                </label>
+                <input
+                  type="file"
+                  id="audio-file"
+                  accept="audio/mp3,audio/mpeg"
+                />
+                <p id="file-info" style="margin-top:6px;font-size:0.85rem;color:var(--text-muted)"></p>
+                <div id="current-audio-wrap" style="display:none;margin-top:8px">
+                  <a id="current-audio-link" href="#" target="_blank" class="btn btn-secondary btn-sm">
+                    ▶ Odtwórz aktualne nagranie
+                  </a>
                 </div>
-                <div id="cover-image-existing" style="margin-top:8px; display:none;">
-                  <p style="font-size:12px; color:#aaa;">Aktualne zdjęcie:</p>
-                  <img id="cover-image-existing-img" style="max-width:300px; max-height:200px; border-radius:8px;">
-                </div>
+              </div>
+
+              <!-- Kolejność -->
+              <div class="form-group">
+                <label for="sort-order">Kolejność</label>
+                <input type="number" id="sort-order" value="0" min="0" />
+                <p style="margin-top:4px;font-size:0.8rem;color:var(--text-muted)">0 = pierwsze na liście</p>
               </div>
 
               <!-- Opublikowany -->
               <div class="form-check">
-                <input type="checkbox" id="is-published" />
+                <input type="checkbox" id="is-published" checked />
                 <label for="is-published">Opublikowany (widoczny w aplikacji)</label>
               </div>
 
               <!-- Akcje -->
               <div class="form-actions">
                 <button class="btn btn-primary" id="save-btn" type="button">
-                  Zapisz szlak
+                  Zapisz nagranie
                 </button>
                 <button class="btn btn-secondary" id="cancel-btn" type="button">
                   Anuluj
@@ -178,9 +162,9 @@
   <script src="js/supabase-client.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/ui.js"></script>
-  <script src="js/add-tour.js"></script>
+  <script src="js/add-audio.js"></script>
   <script>
-    AddTour.init();
+    AddAudio.init();
   </script>
 </body>
 </html>
